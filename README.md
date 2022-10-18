@@ -26,7 +26,7 @@ let wait = cpu.f >> 1;
 ```
 Usually, a CPU should only run if the `f` attribute is set to `0`:
 ```js
-if (cpu.f)
+if (!cpu.f)
   cpu.tick();
 ```
 
