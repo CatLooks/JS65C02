@@ -19,7 +19,7 @@ To tick through one instruction, use `tick` instruction:
 ```js
 cpu.tick();
 ```
-This CPU also provides `halt` & 'wait' flags (triggered by `jam` & `wai` instructions respectively) that are stored in `cpu.f`. To fetch them use the following code:
+This CPU also provides `halt` & `wait` flags (triggered by `jam` & `wai` instructions respectively) that are stored in `cpu.f`. To fetch them use the following code:
 ```js
 let halt = cpu.f & 1;
 let wait = cpu.f >> 1;
@@ -38,6 +38,7 @@ The assembler supports legal 6502 & 65C02 instructions (without `RMB`, `SMB`, `B
 | `.byte` | `(bytes)` | Fills bytes |
 | `.word` | `(words)` | Fills words |
 | `.ascii` | `(strings)` | Fills text |
+
 To assemble the code string, use the following function:
 ```js
 let output = wAssemble(codeString);
