@@ -24,6 +24,11 @@ This CPU also provides `halt` & `wait` flags (triggered by `jam` & `wai` instruc
 let halt = cpu.f & 1;
 let wait = cpu.f >> 1;
 ```
+Usually, a CPU should only run if the `f` attribute is set to `0`:
+```js
+if (cpu.f)
+  cpu.tick();
+```
 
 # Assembler
 To include emulator use the `script` tag:
