@@ -1,0 +1,213 @@
+@import url('http://fonts.cdnfonts.com/css/montserrat');
+
+body {
+	background-color: #222729;
+	color: #FFFFFF;
+	tab-size: 4;
+	white-space: nowrap;
+}
+
+.unselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.fmt-code {
+	font-family: monospace;
+	font-size: 16px;
+	background-color: #222;
+	color: #FFF;
+	overflow: hidden;
+}
+
+.fmt-user {
+	font-family: monospace;
+	font-size: 24px;
+	color: #FFF;
+}
+
+.fmt-table {
+	padding: 4px;
+	border-collapse: collapse;
+}
+
+.fmt-pos {
+	background-color: #666;
+	padding: 4px;
+	color: #9E7;
+}
+
+.fmt-off {
+	background-color: #555;
+	padding: 4px;
+	color: #FA4;
+}
+
+.fmt-addr {
+	background-color: #444;
+	padding: 4px;
+	color: #B8F;
+}
+
+.fmt-cell {
+	padding: 4px;
+	color: #FFF;
+}
+
+.fmt-col0 {
+	background-color: #333;
+}
+
+.fmt-col1 {
+	background-color: #444;
+}
+
+.fmt-ctrl {
+	background-color: #666;
+	padding: 6px;
+}
+
+.fmt-input {
+	border: 2px solid #111;
+	border-radius: 5px;
+	font-family: monospace;
+	font-size: 24px;
+	width: 54px;
+	margin-right: 4px;
+}
+
+.fmt-btn {
+	font-family: 'Montserrat', sans-serif;
+	font-size: 20px;
+	background-color: #333;
+	color: #FFF;
+	border: 3px solid #111;
+	border-radius: 10px;
+	transition-duration: 0.4s;
+}
+
+.fmt-btn:hover {
+	background-color: #444;
+	cursor: pointer;
+}
+
+.fmt-btn-width {
+	width: 100px;
+}
+
+.fmt-out {
+	font-family: monospace;
+	font-size: 18px;
+	border: 10px solid #999;
+	border-radius: 10px;
+	background-color: #111;
+	width: 300px;
+	height: 714px;
+	padding: 10px;
+	resize: none;
+	color: #FFF;
+	white-space: pre-wrap;
+	overflow: auto;
+	margin-bottom: 10px;
+	margin-top: 0;
+}
+
+.fmt-list {
+	font-family: 'Montserrat', sans-serif;
+	font-size: 20px;
+	margin-left: 9px;
+	margin-top: 2px;
+	width: 100% - 20px;
+	background-color: #333;
+	color: #FFF;
+	border: 3px solid #111;
+	border-radius: 10px;
+	cursor: pointer;
+}
+
+.fmt-tick {
+	margin-left: 20px;
+	transform: scale(2.0);
+	cursor: pointer;
+}
+
+.fmt-info {
+	font-family: 'Montserrat', sans-serif;
+	font-size: 20px;
+	background-color: #444;
+	text-align: center;
+	width: 100%;
+	height: 100%;
+}
+
+.fmt-err {
+	color: #F24;
+}
+
+#fmt-ip-ptr {
+	background-color: #6AC;
+}
+
+#fmt-sl-ptr {
+	background-color: #3A5;
+}
+
+#fmt-sp-ptr {
+	background-color: #D24;
+}
+
+#edit, #high {
+	padding: 10px;
+	width: 576px;
+	overflow: auto;
+	white-space: nowrap;
+	border-radius: 10px;
+}
+
+#edit, #high, #high *, #byte {
+	font-size: 16px;
+	font-family: monospace;
+	line-height: 20pt;
+	tab-size: 4;
+}
+
+#edit {
+	position: absolute;
+}
+
+#edit {
+	margin-top: 8px;
+	color: transparent;
+	background: transparent;
+	caret-color: yellow;
+	z-index: 1;
+	resize: none;
+	border: 5px solid transparent;
+}
+
+#high {
+	border: 5px solid #999;
+	z-index: 0;
+}
+
+#byte {
+	min-width: 170px;
+	padding: 10px;
+	border: 5px solid #999;
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+#line {
+	line-height: 20pt;
+	text-align: right;
+	min-width: 36px;
+	padding: 10px;
+	border: 5px solid #999;
+	border-radius: 10px;
+	overflow: hidden;
+}

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>6502 Tutorial</title>
+	<link rel="icon" href="ico.ico"/>
+	<link rel="stylesheet" type="text/css" href="prism.css"/>
+	<link rel="stylesheet" type="text/css" href="style.css"/>
+	<script type="text/javascript" src="prism.js"></script>
+	<script type="text/javascript" src="w65.js"></script>
+	<script type="text/javascript" src="a65.js"></script>
+	<script type="text/javascript" src="e65.js"></script>
+	<style type="text/css">
+		body {
+			word-break: normal;
+			white-space: normal;
+		}
+		h1, h3, p, li {
+			font-family: 'Montserrat', sans-serif;
+			font-size: 20px;
+		}
+		h1, h3 {
+			text-align: center;
+		}
+		.subsize {
+			margin-left: 10%;
+			width: 80%;
+		}
+		a {
+			color: #FE4;
+		}
+		footer {
+			text-align: center;
+			padding: 100px;
+			background-color: black;
+			font-family: 'Montserrat', sans-serif;
+			font-size: 16px;
+		}
+	</style>
+</head>
+<body>
+
+	<button class="fmt-btn" onclick="switchLang('en'); genStdCode('en');">English</button>
+	<button class="fmt-btn" onclick="switchLang('uk'); genStdCode('uk');">Український</button>
+	
+	<h1><lang-en>6502 Processor</lang-en><lang-uk>Процесор 6502</lang-uk></h1>
+
+	<h3><lang-en>Introduction</lang-en><lang-uk>Вступ</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>6502 Processor is an 8-bit chip that was heavily used during 80's. It became revolutionary, as it was one of the few processors that delivered only the necessary for a small price.</lang-en><lang-uk>Процесор 6502 - це 8-ми бітний чіп, який був багаторазово вживаний у 80-ті роки. Він став революційним, оскільки був одним з небагатьох процесорів, які надавали тільки необхідне за малу суму.</lang-uk></p>
+		<p><lang-en>So in this web tutorial I will explain how this thing works. Every topic regarding the functionality has a built-in environment, where you can write some code and test it immediately, along with some helpful tools.</lang-en><lang-uk>Тому, в цьому міні-уроку я розкажу як це все працює. Кожна тема відносно функціоналу має вбудоване міні-середовище, де можна написати якийсь код і одразу протестувати його з допомогою доданих інструменів.</lang-uk></p>
+		<p><lang-en>Finally, the reason for learning 6502 architecture and not, for instance x86, is because 6502 is quite easy to learn and can actually be pretty fun to work with.</lang-en><lang-uk>Нарешті, причина, чому вам варто вивчити саме цей процесор, а не, на приклад, х86, полягає в тому, що 6502 - це доволі легкий процесор до вивчення, який був написаний для використання людьми (а не компіляторами).</lang-uk></p>
+	</div>
+	<h3><lang-en>Number Systems</lang-en><lang-uk>Числові Системи</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>So this tutorial will require an understanding of different number systems, namely binary (base 2) and hexadecimal (base 16). The most used system is hexadecimal, since it is the most compact one and perfectly aligns with ranges of values this processor can support. And if you know hexadecimal, I'm pretty sure you know binary as well.</lang-en><lang-uk>Цей міні-урок потребує знання різних числових систем, а саме двійкової та шістнадцяткової. Остання буде найбільш часто використовуватися, оскільки вона найбільш компактна. Якщо знаєте шістнадцяткову систему, думаю, що й двійкову теж знаєте.</lang-uk></p>
+		<p><lang-en>Note that hexadecimal values are denoted with '$' in front, while binary ones with '%'.</lang-en><lang-uk>Зверніть увагу, що перед шістнадцятковими значеннями стоїть '$', а перед двійковими - '%'.</lang-uk></p>
+		<pre aria-hidden><code class="language-asm6502">$FF       ; 255</code><br><code class="language-asm6502">%11110000 ; 255</code></pre>
+	</div>
+	<h3><lang-en>Bus Sizes</lang-en><lang-uk>Розміри Шин</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>Again, 6502 is an 8-bit processor, so don't expect it to be able to easily handle large numbers that you may be familiar with. The only values we are working here with have 8 bits or 16 bits (with 0 - 255 and 0 - 65535 boundaries respectively). This number bounds are very important to remember, since this feature is actually used pretty often.</lang-en><lang-uk>Знову, 6502 - це 8-ми бітний процесор, тому не чекайте, що він зможе легко оперувати великими числами, до яких ви могли привикнути. Значення, з якими ми працюємо, мають 8 або 16 бітів (відповідно з інтервалами 0 - 255 і 0 - 65535). Важливо запам'ятати цей факт, оскільки багато фішок процесора базуються на цьому.</lang-uk></p>
+	</div>
+	<h3><lang-en>Registers</lang-en><lang-uk>Регістри</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>Finally, we can move to actually learning the processor. Firstly, we need to talk about registers. Basically, those are memory cells built in processor that offer very fast read/write speed. They act very similar to variables in programming languages, actually. Here is the list of all registers in 6502:</lang-en><lang-uk>Нарешті, можемо почати вивчати процесор. Спочатку, маємо поговорити про регістри. Коротко кажучи, регістри - комірки пам'яті вбудовані у процесор з високою швидкістю переписання та зчитування. Вони дуже подібні до змінних у програмних мовах. Ось їхній список:</lang-uk></p>
+		<ul>
+			<li><code class="language-asm6502">A</code> - <lang-en>Accumulator (8-bit). It is the most used register and most of the operations will be operating with it.</lang-en><lang-uk>Акумулятор (8-ми бітний). Це найвживаніший регістр, який має найбільше операцій, пов'язаних з ним.</lang-uk></li>
+			<li><code class="language-asm6502">X</code> - <lang-en>X-Index (8-bit). It is used for indexing data in memory and most of the operations that allow index shifting will support X shifting.</lang-en><lang-uk>Х-Індекс (8-ми бітний). Використовується для індексації даних. Більшість індексованих інструкцій підтримують індексацію з регістром Х</lang-uk></li>
+			<li><code class="language-asm6502">Y</code> - <lang-en>Y-Index (8-bit). Same with X, it is used for indexing data, altought the difference is that Y indexing is far less supported that X indexing, however it still has some modes that X indexing does not.</lang-en><lang-uk>Y-Індекс (8-ми бітний). Як і Х, використовується для індексації даних, однак йому бракує підтримки різних інструкцій. Компенсується це унікальними режимами адресації.</lang-uk></li>
+			<li><code class="language-asm6502">S</code> - <lang-en>Stack pointer (8-bit). The value inside is pointing to the position of stack in the moment.</lang-en><lang-uk>Стек-вказівник (8-ми бітний). Вказує на позицію стеку.</lang-uk></li>
+			<li><code class="language-asm6502">P</code> - <lang-en>Processor status (8-bit). This register stores flags that indicate something about the status of the execution of instructions. It is technically not an 8-bit value, but some instructions can treat it like such.</lang-en><lang-uk>Процесорний статус (8-ми бітний). Складається з 1-но бітних прапорців, які містять якісь дані про виконання інструкцій. Насправді у процесорі немає єдиного регістра, але деякі інструкції його таким опрацьовують.</lang-uk></li>
+			<li><code class="language-asm6502">I</code> - <lang-en>Instruction pointer (16-bit). This register points to the place, where the current instruction is being executed.</lang-en><lang-uk>Інструкційний вказівник (16-ти бітний). Вказує на місце наступної інструкції.</lang-uk></li>
+		</ul>
+	</div>
+	<h3><lang-en>Address Space</lang-en><lang-uk>Простір Адресації</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>Address Space is a mapping of different devices connected to 6502 to its 64Kb addressable space (it is the reason why instruction pointer is 16-bit). Of course, if we just connect a single device to all the space, the processor won't be able to do anything useful, so the space is usually dividen among several devices. In this tutorial, the mapping is as follows:</lang-en><lang-uk>Простір Адресації - це прив'язка різних пристроїв до простору 6502, який він може адресувати. Звичайно, з одним під'єднаним пристроєм процесор нічого корисного зробити не зможе, тому часто цей простір розділений між багатьма пристроями. У цьому міні-уроці, процесор має такі з'єднання:</lang-uk></p>
+		<ul>
+			<li><code class="language-asm6502">$0000 - $00FF</code> - <lang-en>Zero Page of RAM. It is a general-purpose section of RAM with an exception of being faster to access that other locations.</lang-en><lang-uk>Нульова сторінка ОЗП. Простір загального використання за вийнятком того, що час його адресації менший, ніж у іншої частини пам'яті.</lang-uk></li>
+			<li><code class="language-asm6502">$0100 - $01FF</code> - <lang-en>Stack Page of RAM. This section is used by 6502 as memory to store stack, thus you shouldn't write anything to this page. Since it is only one page long, the stack register requires only 8-bits.</lang-en><lang-uk>Сторінка стеку ОЗП. Ця секція використовується процесором як пам'ять для стека, тому не рекомендується зберігати там інформацію.</lang-uk></li>
+			<li><code class="language-asm6502">$0200 - $3FFF</code> - <lang-en>RAM. Here we have the rest of RAM, that you can use how ever you like.</lang-en><lang-uk>Решта ОЗП. Може бути використана, як завгодно.</lang-uk></li>
+			<li><code class="language-asm6502">$4000 - $4003</code> - <lang-en>Terminal Registers. External registers of the terminal that allow you to control it.</lang-en><lang-uk>Регістри терміналу. Зовнішні регістри, через які реалізується управління терміналом.</li>
+			<li><code class="language-asm6502">$8000 - $FFF9</code> - <lang-en>Program Space. This is where the program you write will be stored.</lang-en><lang-uk>Програмний простір. Тут зберігається ваша програма.</lang-uk></li>
+			<li><code class="language-asm6502">$FFFA - $FFFF</code> - <lang-en>Interrupt Vectors. 3 16-bit values that point to the place in code where 6502 will jump if it receives an interrupt request.</lang-en><lang-uk>Вектори переривання. 3 16-ві числа, які вказують, куду процесору слід перестрибнути, щоб він зробив відповідні дії.</lang-uk></li>
+		</ul>
+		<p><lang-en>Area that wasn't documented here goes unused.</lang-en><lang-uk>Місця, які не є документованими, не є використаними.</lang-uk></p>
+	</div>
+	<h3><lang-en>Loading, Storing & Transfering</lang-en><lang-uk>Інструкції Загрузки, Збереження та Переносу</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>Let's start to finally learn how to write code. Firstly, we need to learn how to load values inside the registers available. We will now use the environment to check how our code works in action. Let's quickly see what you can do in this environment. And also don't forget to trigger Reset Interrupt before trying to run the code.</lang-en><lang-uk>Розпочнемо нарешті вивчати написання коду. Спочатку, нам потрібно вивчити як загружати значення в регістри. Ми використаємо міні-середовище, щоб побачити наш код у дії. Давайте поговоримо, що можна зробити в міні-середовищі. І не забувайте скидади процесор перед запуском коду.</lang-uk></p>
+		<ul>
+			<li><lang-en>Area for text is used to write the code. It will also highlight to make your experience much better.</lang-en><lang-uk>У текстовому полі пишеться код. Він, для зручності, буде підсвіченим.</lang-uk></li>
+			<li><lang-en>In the bottom right we have memory window. You can easily view the memory in all places you like or edit some values to see what happens.</lang-en><lang-uk>В низу маємо вікно пам'яті. З допомогою нього ми можемо проглядати всю пам'ять процесора і навіть міняти деякі значення.</lang-uk></li>
+			<li><lang-en>In the center we have processor status. It displays the state of registers, what instruction we are currently executing and has some control buttons:</lang-en><lang-uk>В нижньому центрі маємо статус процесора. Тут показано стан регістрів, яка наступна інструкція та інше. Є також і декілька кнопок для контролю процесора:</lang-uk></li>
+			<ol>
+				<li>Power - <lang-en>Power off and on 6502. It will reset the registers and RAM to random values.</lang-en><lang-uk>Перезапускає систему, внаслідок чого регістри та пам'ять, втрачають свої попередні значення.</lang-uk></li>
+				<li>Run & Pause - <lang-en>Choose whether you want the processor to automatically execute everything in its path with high speed or pause and use Step button to step through every instruction.</lang-en><lang-uk>Виберіть чи процесор буде автоматично виконувати інструкції з високою швидкістю, чи процесор буде чекати поки ви не нажмете кнопку "Step", щоь простежити, що процесор робить під час інструкції.</lang-uk></li>
+				<li>Triggers - <lang-en>Those are used to trigger interrupts.</lang-en><lang-uk>Спричиняють переривання.</lang-uk></li>
+			</ol>
+			<li><lang-en>At the right we have terminal. We will use it later to display some messages there.</lang-en><lang-uk>Справа є термінал. Потім ми використаємо його, щоб виводити текст.</lang-uk></li>
+			<li><lang-en>A very important button right at the center is called Assemble. It is used to assemble your code. If it contains an error, an error message will be displayed at the terminal.</lang-en><lang-uk>Одна з найважливіших кнопок - "Assemble". Вона компілює код, якщо є помилка - показує її у терміналі.</lang-uk></li>
+		</ul>
+		<div id="env0"></div>
+		<p><lang-en>As I said before, you can try to step throught each instruction and see what changes it makes to registers. In this example, we are changing the A register. We can do the same with X and Y registers, since they are also general-purpose. We can also store different values using format 'ST?'. Remember that values with '#' before them mean constant while the ones without mean addresses. And finally, if we want to move the value between registers we can use format 'T12' where we move the value from register 1 to register 2.</lang-en><lang-uk>Як і сказано раніше, можна пройти кожен крок процесора, щоб побачити, які зміни він робить. В цьому прикладі, ми змінюємо регістр А. Аналогічним чином можна змінити регістри X і Y. Можна зберегти їхні значення в пам'яті використовуючи інструкції STA, STX та STY. Пам'ятайте, що "#" перед значенням означає, що воно - літерал, а інакше - адреса. Нарешті, для деяких регістів існують швидкі інструкції для переміщення з одного в одного значень. Вони використовують формат "T12" (з регістра 1 значення переміщується в регістр 2).</lang-uk></p>
+		<div id="env1"></div>
+	</div>
+	<h3><lang-en>ALU</lang-en><lang-uk>АЛП</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>ALU is arithmetical logical unit. As you may guessed it is a part of 6502 that can perform different operations. Before checking out the instructions, please note that almost all instructions operate with A register.</lang-en><lang-uk>АЛП - це арифметично-логічний пристрій. Як ви могли догадатися, він є частиною 6502, яка відповідає за виконання операцій над акумулятором. Ось інструкції, які може виконати 6502:</lang-uk></p>
+		<ul>
+			<li>ADC - <lang-en>addition with carry, if carry is 1, then an extra 1 will be added towards the sum</lang-en><lang-uk>додавання з остачею, коли прапорець C = 1, то до суми додається 1</lang-uk></li>
+			<li>SBC - <lang-en>subtraction with carry, if carry is 0, then an extra 1 will be subtracted from the difference</lang-en><lang-uk>віднімання з остачею, коли прапорець C = 0, то від різниці віднімається 1</lang-uk></li>
+			<li>AND - <lang-en>bitwise AND</lang-en><lang-uk>бітове І</lang-uk></li>
+			<li>ORA - <lang-en>bitwise OR</lang-en><lang-uk>бітове АБО</lang-uk></li>
+			<li>EOR - <lang-en>bitwise XOR</lang-en><lang-uk>бітове Тільки АБО</lang-uk></li>
+			<li>LSR - <lang-en>shift right, the far right bit will be stored in carry</lang-en><lang-uk>здвиг направо, біт 0 здвигається в прапорець C</lang-uk></li>
+			<li>ASL - <lang-en>shift left, the far left bit will be stored in carry</lang-en><lang-uk>здвиг наліво, біт 7 здвигається в прапорець C</lang-uk></li>
+			<li>ROR - <lang-en>rotation right, the far right bit will be stored in carry while carry will be shifted from left side</lang-en><lang-uk>оберт вправо, біт 0 здвигається в прапорець C, коли прапорець C здвигається в біт 7</lang-uk></li>
+			<li>ROL - <lang-en>rotation left, the far left bit will be stored in carry while carry will be shifted from right side</lang-en><lang-uk>оберт вправо, біт 7 здвигається в прапорець C, коли прапорець C здвигається в біт 0</lang-uk></li>
+		</ul>
+		<div id="env2"></div>
+	</div>
+	<h3><lang-en>Flags & Branches</lang-en><lang-uk>Прапорці та Розгалуження</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>I bet you have seen the presence of flags in our code already. Well, it's time to explain the. Basically, a flag is 1 bit that states whether a condition was met. Here are those conditions:</lang-en><lang-uk>Я думаю ви замітили присутність "прапорців" в нашому коді, тому саме час, щоб їх пояснити. Коротше кажучи, прапорець - це 1 біт, який вказує на виконання чи невиконання якоїсь умови. Ось і ці умови:</lang-uk></p>
+		<ul>
+			<li>N - <lang-en>Negative, triggered if the last value on bus had bit 7 enabled</lang-en><lang-uk>Негатив, рівний біту 7 останнього значення, яке потрапило на шину даних</lang-uk></li>
+			<li>V - <lang-en>Overflow, triggered if the ADC or SBC instruction caused on over or underflow if we treat the operands as signed values</lang-en><lang-uk>Перевал, активується, якщо результат додавання чи віднімання перевищив ліміт 8-бітного числа зі знаком</lang-uk></li>
+			<li>D - <lang-en>Decimal, this flag changes the behavior of ADC and SBC, so they work with BCDs</lang-en><lang-uk>Десятковий, змінює, як додавання та віднімання сприймають вхідні значення</lang-uk></li>
+			<li>I - <lang-en>IRQ Disable, if the flag is on, the external devices won't be able to trigger IRQ</lang-en><lang-uk>Подавлення запитів на переривання, якщо прапорець піднятий, переривання IRQ не зможе статися</lang-uk></li>
+			<li>Z - <lang-en>Zero, triggered if the last value on bus was 0</lang-en><lang-uk>Нуль, піднятий, якщо останнє значення на шині даних було нульовим</lang-uk></li>
+			<li>C - <lang-en>Carry, triggered if the result of an operation resulted in a value too big for storing in 8-bit register</lang-en><lang-uk>Переніс, піднятий, якщо операція перевищила ліміт 8-бітного числа (зазвичай)</lang-uk></li>
+		</ul>
+		<p><lang-en>You can see the effects of flags in the following code:</lang-en><lang-uk>Встановлення прапорців показано в наступному коді:</lang-uk></p>
+		<div id="env3"></div>
+		<p><lang-en>Now, we can also use the to do conditional coding: by using branch instructions, we can jump to other parts of the code if certain flag has either 0 or 1:</lang-en><lang-uk>Тепер, ми також можемо писати умовний код: використовуючи розгалуження, ми можемо пропускати код при певній умові:</lang-uk></p>
+		<div id="env4"></div>
+	</div>
+	<h3><lang-en>Subroutines & Stack</lang-en><lang-uk>Субрутини та Стек</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>To this point, all the code that we can write is pretty straight forward, but if we would want to, for example, write a procedure that will be called many times, thus saving space? Well, that's exactly the job of subroutines. They are very similar in execution to functions in programing languages. Use JSR to jump to subroutine and RTS to exit from subroutine:</lang-en><lang-uk>Зараз, весь нами написаний код є доволі прямолінійним, але ми можемо хотіти написати, на приклад, процедуру, яка буде викликана багато разів, економлячи простів. Це і є робота субрутин. Вони дуже подібні до функцій у мовах програмування. Використовуючи інструкцію JSR ми переходимо до субрутини, а інструкцією RTS з неї виходимо.</lang-uk></p>
+		<div id="env5"></div>
+		<p><lang-en>But now, how does 6502 know where to jump when we execute RTS instruction. In the example, we are jumping to the subroutine from 3 different places, but everytime the RST instruction returns us to a jumping position. This can actually be done with the help of Stack.</lang-en><lang-uk>Але як процесор знає, куди потрібно вернутися після виконання субрутини? Ми щойно викликали її з 3-ох різних позицій, і завджи процесор може повернутися назад. На допомогу приходить Стек.</lang-uk></p>
+		<p><lang-en>Stack is a form of an array, to which you can either add one element on the top or take the top element away. When we jump to subroutine, we push (add) the address from which we jumped to the stack and when we return from subroutine, we pull (take) the address and jump to it to return to the previous location. If you run the code one more time, you can track the stack position by clicking on it. If you are at the middle of a subroutine call, you will see an address after the stack pointer (since the stack is decrementing in 6502).</lang-en><lang-uk>Стек - це форма списку, в який можна або покласти щось на самий верх, або щось зверху взяти. Таким чином, коли процесор переходить до виконання субрутини, він одночано кладе до стеку адресу, до якої він має потім повернутися. Якщо прослідкувати за стеком під час виконання субрутини, можна побачити адресу, з якої процесор перестрибнув.</lang-uk></p>
+		<p><lang-en>Stack can also be used by other instructions. You can push or pull registers (and even processor status) on the stack:</lang-en><lang-uk>Стек також використовується іншими інструкціями, на приклад, щоб покласти значення регістрів або навіть статусу процесора:</lang-uk></p>
+		<div id="env6"></div>
+	</div>
+	<h3><lang-en>Indexing Addressing Modes</lang-en><lang-uk>Індексований Режим Адресації</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>Since we have loops, why not do something useful with data by looping over it? Well, that might be the thought when you learn how to do loops, so now we will learn how to iterate through data.</lang-en><lang-uk>Оскільки ми маємо цикли, чому б не зробити щось корисного з даними, опрацьовуючи їх.</lang-uk></p>
+		<p><lang-en>Indexing Addressing Modes come to help. These are modes that have an address as a starting point but also increment an index register to it to change the address.</lang-en><lang-uk>Індексований Режим Адресації допоможе нам у цьому. Принцип роботи простий - ми беремо стартову адресу і добавляємо до неї індексовий регістр.</lang-uk></p>
+		<p><lang-en>So, let's learn how to write loops using index registers, by making a memory filler, for instance:</lang-en><lang-uk>Що ж, давайте навчимося писати цикли з використанням регістрів індексації, роблячи заповнювач пам'яті, на приклад:</lang-uk></p>
+		<div id="env7"></div>
+	</div>
+	<h3><lang-en>Indirect Addressing Modes</lang-en><lang-uk>Непрямий Режим Адресації</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>This is the most complicated addressing mode, since it requires the most time to execute. However, it offers flexibility of a program allowing it to work with different sets of data. This is especially important for functions, as we will see later.</lang-en><lang-uk>Цей режим є найсладнішим і найдовшим у роботі зі всіх інших. Але, саме він дозволяє робити код, а саме функції, які можуть опрацьовувати дані у різних ділянках пам'яті.</lang-uk></p>
+		<p><lang-en>For simplicity, let's implement the same memory filler as before, that now can fill memory at different locations and package it as a function:</lang-en><lang-uk>Для простоти, зробимо такий самий заповнювач пам'яті, тільки тепер з підтримкою вказування локації заповнення:</lang-uk></p>
+		<div id="env8"></div>
+	</div>
+	<h3><lang-en>Interfacing Terminal</lang-en><lang-uk>Інтерфейс Терміналу</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>We have finally learned all the basics of writing 6502 assembly. However, just writing values to RAM isn't gonna do anything on its own. For this reason, I have added a terminal which you can see at the right of the code editor.</lang-en><lang-uk>Ми нарешті вивчили всю базу написання коду для 6502. Але, одна взаємодія з ОЗМ не зробить нічого корисного. Тому, я добавив до міні-середовища термінал.</lang-uk></p>
+		<p><lang-en>Typically, external devices can be controlled using their internal registers that are connected to 6502 bus. The terminal I have created has the following interface:</lang-en><lang-uk>Зазвичай, зовнішні пристрої контролюються за допомогою регістрів, які з'єднані з шиною 6502. Я створив такий інтерфейс для цього терміналу:</lang-uk></p>
+		<ul>
+			<li><lang-en>Write to $4000 - outputs the character written to the register to the terminal</lang-en><lang-uk>Запис до $4000 - виводить символ у термінал</lang-uk></li>
+			<li><lang-en>Write to $4001 - enable the input field</lang-en><lang-uk>Запис до $4001 - вмикає можливість надіслати вхідний текст</lang-uk></li>
+			<li><lang-en>Write to $4002 - clear the terminal</lang-en><lang-uk>Запис до $4002 - clear the terminal</lang-uk></li>
+			<li><lang-en>Write to $4003 - set high part of the address where the input will be written to (the low part is 0), the default position is $0200, also the whole buffer takes only 32 bytes (with null terminator)</lang-en><lang-uk>Запис до $4003 - встановити верхній байт адреси вхідних даних, весь буфер займає 32 байти</lang-uk></li>
+		</ul>
+		<p><lang-en>The important thing is to understand, that when we send the input, an interrupt request (IRQ) will be triggered. It requires the flag I to be 0 and then the program will jump to the vector at $FFFA and start executing interrupt code. We will take advantage of that in our next program.</lang-en><lang-uk>Важливо знати, що коли користувач надсилає вхідні дані, створюється запит на переривання.</lang-uk></p>
+		<p><lang-en>With these 4 registers, we can have simple I/O. To demonstrate the result, you can see how the following greeting program works. All you need to do is input your name when asked:</lang-en><lang-uk>З цими 4-ма регістрами маємо просту текстову взаємодію з користувачем. Для підсумування, напишемо програму, яка привітає користувача, після того, як він введе своє ім'я як вхідний текст (щоб не робити цю програму ще складнішою, вона підтримує тільки ввід англійською мовою).</lang-uk></p>
+		<div id="env9"></div>
+	</div>
+	<h3><lang-en>Ending</lang-en><lang-uk>Ремарка</lang-uk></h3>
+	<div class="subsize">
+		<p><lang-en>Thanks for reaching this far. I hope you learned something new today. If you want to try to program something more complex, without any distractions, feel free to try out <a href="sandbox.html" title="Sandbox Page">Sandbox Environment</a>.</lang-en><lang-uk>Дякую, що дойшли так далеко. Надіюсь, ви дізналися щось нове сьогодні. Якщо хочете спробувати запрограмувати щось складніше, без жодних відволікань, спробуйте <a href="sandbox.html" title="Пісочниця">ізольоване міні-середовище</a>.</lang-uk></p>
+	</div>
+	<footer><lang-en>Website source available on <a href="https://github.com/CatLooks/JS65C02" title="GitHub Repo">GitHub</a>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Libraries used: <a href="https://github.com/PrismJS/prism">Prism</a>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Website made by <a href="https://github.com/CatLooks">CatLooks</a></lang-en><lang-uk>Вихідний код наявний в репозиторії <a href="https://github.com/CatLooks/JS65C02" title="GitHub Repo">GitHub</a>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Використані бібліотеки: <a href="https://github.com/PrismJS/prism">Prism</a>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Автор сайту: <a href="https://github.com/CatLooks">CatLooks</a></lang-uk></footer>
+
+	<script type="text/javascript">
+		// language list
+		const languages = ['en', 'uk'];
+
+		// turn on language
+		function switchLang(lang) {
+			let els = document.getElementsByTagName(`lang-${lang}`);
+			for (let i = 0; i < els.length; i++) {
+				els[i].style = '';
+			};
+			for (let j = 0; j < languages.length; j++) {
+				if (languages[j] === lang) continue;
+				let els = document.getElementsByTagName(`lang-${languages[j]}`);
+				for (let i = 0; i < els.length; i++) {
+					els[i].style = 'display: none;';
+				};
+			};
+		};
+
+		// generate environemts
+		let env0 = new WTools();
+		let env1 = new WTools();
+		let env2 = new WTools();
+		let env3 = new WTools();
+		let env4 = new WTools();
+		let env5 = new WTools();
+		let env6 = new WTools();
+		let env7 = new WTools();
+		let env8 = new WTools();
+		let env9 = new WTools();
+
+		document.getElementById('env0').replaceWith(env0.div);
+		document.getElementById('env1').replaceWith(env1.div);
+		document.getElementById('env2').replaceWith(env2.div);
+		document.getElementById('env3').replaceWith(env3.div);
+		document.getElementById('env4').replaceWith(env4.div);
+		document.getElementById('env5').replaceWith(env5.div);
+		document.getElementById('env6').replaceWith(env6.div);
+		document.getElementById('env7').replaceWith(env7.div);
+		document.getElementById('env8').replaceWith(env8.div);
+		document.getElementById('env9').replaceWith(env9.div);
+		
+		function genStdCode(lang) {
+			if (lang === 'en') {
+				env0.edw.textarea.value = 'prg:\n\tlda #$00 ; use semicolon to create comments\n\tlda #$FF\n\tstp\n\n.pos $FFFC\n.word prg';
+				env1.edw.textarea.value = 'prg:\n\tlda #$C1 ; use seek at memory panel to navigate towards $00\n\tsta $00\n\ttax\n\tstx $01\n\tstp\n\n.pos $FFFC\n.word prg';
+				env2.edw.textarea.value = 'prg:\n\tcld\n\tclc\n\tlda #$02\n\tadc #$07 ; 2 + 7 = 9\n\tsec\n\tsbc #$05 ; 7 - 5 = 4\n\tora #$07 ; 4 | 7 = 7\n\teor #$F9 ; $07 | $F9 = $FE\n\tand #$0F ; $FE & $0F = 14\n\tlsr a    ; 14 >> 1 = 7\n\tstp\n\n.pos $FFFC\n.word prg';
+				env3.edw.textarea.value = 'prg:\n\tcld\n\tlda #$02\n\tsec\n\tadc #$02 ; 2 + 2 + 1 (Carry) = 5\n\tadc #$80 ; overflow, since $85 = -123\n\tadc #$80 ; carry = 1, since the result should\'ve been $105\n\tstp\n\n.pos $FFFC\n.word prg';
+				env4.edw.textarea.value = 'prg:\n\tclc    ; carry = 0\n\tbcc b0 ; branch if carry = 0, so we jump\n\tlda #$66\nb0:\n\tsta $00  ; $00 won\'t change since we jumped over it\n\tldx #$F0 ; negative = 1\n\tbpl b1   ; branch if plus (N = 0), so no jump\n\tstx $00  ; we execute this opcode\nb1:\n\tstp\n\n.pos $FFFC\n.word prg';
+				env5.edw.textarea.value = 'inc_x:\n\tinx ; this subroutine will increment x by 1\n\trts\nprg:\n\tldx #$00  ; x = 0\n\tjsr inc_x ; x = 1\n\tjsr inc_x ; x = 2\n\tjsr inc_x ; x = 3\n\tstp\n\n.pos $FFFC\n.word prg';
+				env6.edw.textarea.value = 'prg:\n\tldx #$64\n\tldy #$FE\n\tphx ; check the stack pointer\n\tphy\n\tplx ; x = y, since y was pushed last\n\tply ; y = x\n\tphp ; push P register\n\tpla ; a = p\n\tand #$01 ; a = carry\n\tstp\n\n.pos $FFFC\n.word prg';
+				env7.edw.textarea.value = 'prg:\n\tlda #$FF ; value we will fill in\n\ttax\n\tinx ; x = 0 but faster than normal loading\nloop:\n\tsta $00, x ; create $FF filling at $0000\n\tinx        ; x++\n\tcpx #$10   ; z = 1 if x = 16\n\tbne loop   ; else branch back to start\n\tstp\n\n.pos $FFFC\n.word prg';
+				env8.edw.textarea.value = '.set ADDR $10 ; we keep the address here\n\nfiller:\n\tldy #$00 ; we use y since only it allows \'($), y\' mode\n\ttya\n\tdec a ; filler value\nfiller.loop:\n\tsta (ADDR), y ; load address at ADDR, then add y\n\tiny\n\tcpy #$10 ; check for loop end\n\tbne filler.loop\n\trts ; return from function\n\nprg:\n\tlda #$00 ; load $0000 to ADDR\n\tsta ADDR\n\tsta ADDR + 1\n\tjsr filler ; call function\n\tlda #$20 ; load $0020 to ADDR\n\tsta ADDR\n\tstz ADDR + 1\n\tjsr filler ; call function again\n\tstp\n\n.pos $FFFC\n.word prg';
+				env9.edw.textarea.value = "irq:\n\trti ; return from interrupt immediately\n\ninput:\n\tstz $4001 ; enable input box\n\twai       ; halts until interrupt occurs\n\trts\n\nprg:\n\tstz $4002 ; clear screen\n\tcli       ; enable IRQs\n\tjsr input ; take user input\n\tlda #'H'  ; print 'Hello, '\n\tsta $4000\n\tlda #'e'\n\tsta $4000\n\tlda #'l'\n\tsta $4000\n\tsta $4000 ; no need to load 'l' twice\n\tlda #'o'\n\tsta $4000\n\tlda #','\n\tsta $4000\n\tlda #' '\n\tsta $4000\n\tldx #$00  ; print user input\nprg.loop:\n\tlda $0200, x ; load character from input buffer\n\tbeq prg.end  ; exit if the character is \\0\n\tsta $4000\n\tinx\n\tbra prg.loop ; otherwise always loop back\nprg.end:\n\tlda #'!' ; print '!' and newline\n\tsta $4000\n\tlda #'\\n'\n\tsta $4000\n\tstp\n\n.pos $FFFA\n.word irq ; interrupt vector\n.word prg ; reset vector";
+			} else if (lang === 'uk') {
+				env0.edw.textarea.value = 'prg:\n\tlda #$00 ; крапка з комою починають коментар\n\tlda #$FF\n\tstp\n\n.pos $FFFC\n.word prg';
+				env1.edw.textarea.value = 'prg:\n\tlda #$C1 ; нажміть кнопку Seek на панелі, щоб знайти адресу $00\n\tsta $00\n\ttax\n\tstx $01\n\tstp\n\n.pos $FFFC\n.word prg';
+				env2.edw.textarea.value = 'prg:\n\tcld\n\tclc\n\tlda #$02\n\tadc #$07 ; 2 + 7 = 9\n\tsec\n\tsbc #$05 ; 7 - 5 = 4\n\tora #$07 ; 4 | 7 = 7\n\teor #$F9 ; $07 | $F9 = $FE\n\tand #$0F ; $FE & $0F = 14\n\tlsr a    ; 14 >> 1 = 7\n\tstp\n\n.pos $FFFC\n.word prg';
+				env3.edw.textarea.value = 'prg:\n\tcld\n\tlda #$02\n\tsec\n\tadc #$02 ; 2 + 2 + 1 (переніс) = 5\n\tadc #$80 ; переплив, оскільки $85 = -123\n\tadc #$80 ; переніс = 1, оскільки результат мав би бути $105\n\tstp\n\n.pos $FFFC\n.word prg';
+				env4.edw.textarea.value = 'prg:\n\tclc    ; C = 0\n\tbcc b0 ; перестрибується коли C = 0, тому воно відбувається\n\tlda #$66\nb0:\n\tsta $00  ; $00 не зміниться оскільки ми пропустили загрузку\n\tldx #$F0 ; N = 1\n\tbpl b1   ; перестрибується коли N = 0, тому не перестрибуємо\n\tstx $00  ; інструкція виконується\nb1:\n\tstp\n\n.pos $FFFC\n.word prg';
+				env5.edw.textarea.value = 'inc_x:\n\tinx ; ця субрутина збільшує x на 1\n\trts\nprg:\n\tldx #$00  ; x = 0\n\tjsr inc_x ; x = 1\n\tjsr inc_x ; x = 2\n\tjsr inc_x ; x = 3\n\tstp\n\n.pos $FFFC\n.word prg';
+				env6.edw.textarea.value = 'prg:\n\tldx #$64\n\tldy #$FE\n\tphx ; перевір стек\n\tphy\n\tplx ; x = y, тому що y покладено вкінці\n\tply ; y = x\n\tphp ; покласти регістр p\n\tpla ; a = p\n\tand #$01 ; a = C\n\tstp\n\n.pos $FFFC\n.word prg';
+				env7.edw.textarea.value = 'prg:\n\tlda #$FF ; значення заповнення\n\ttax\n\tinx ; x = 0 але швидка версія\nloop:\n\tsta $00, x ; створення $FF заповнення в $0000\n\tinx        ; x++\n\tcpx #$10   ; z = 1 якщо x = 16\n\tbne loop   ; інакше вертаємося назад\n\tstp\n\n.pos $FFFC\n.word prg';
+				env8.edw.textarea.value = '.set ADDR $10 ; адреса зберігання адреси\n\nfiller:\n\tldy #$00 ; використовуємо y через унікалький режим\n\ttya\n\tdec a ; значення заповнення\nfiller.loop:\n\tsta (ADDR), y ; загрузити адресу з ADDR, потім додати y\n\tiny\n\tcpy #$10 ; перевірити, чи кінець циклу\n\tbne filler.loop\n\trts ; вийти з субрутини\n\nprg:\n\tlda #$00 ; загрузити $0000 в ADDR\n\tsta ADDR\n\tsta ADDR + 1\n\tjsr filler ; викликати субрутину\n\tlda #$20 ; загрузити $0020 в ADDR\n\tsta ADDR\n\tstz ADDR + 1\n\tjsr filler ; викликати субрутину знову\n\tstp\n\n.pos $FFFC\n.word prg';
+				env9.edw.textarea.value = "irq:\n\trti ; вийти з переривання одразу\n\ninput:\n\tstz $4001 ; ввімкнути ввід\n\twai       ; чекає доки станеться переривання\n\trts\n\nprg:\n\tstz $4002 ; очистити екран\n\tcli       ; ввімкнути переривання\n\tjsr input ; отримати ввід\n\tlda #'H'  ; надрукувати 'Hello, '\n\tsta $4000\n\tlda #'e'\n\tsta $4000\n\tlda #'l'\n\tsta $4000\n\tsta $4000 ; не потрібно загружати 'l' 2 рази\n\tlda #'o'\n\tsta $4000\n\tlda #','\n\tsta $4000\n\tlda #' '\n\tsta $4000\n\tldx #$00  ; вивести ввід користувача\nprg.loop:\n\tlda $0200, x ; загрузити символ з буферу\n\tbeq prg.end  ; вийти якщо символ - \\0\n\tsta $4000\n\tinx\n\tbra prg.loop ; інакше завжди повернутися назад\nprg.end:\n\tlda #'!' ; надрукувати '!' і новий рядок\n\tsta $4000\n\tlda #'\\n'\n\tsta $4000\n\tstp\n\n.pos $FFFA\n.word irq ; вектор переривання\n.word prg ; вектор початку програми";
+			};
+			env0.edw.textarea.dispatchEvent(new Event('input', {}));
+			env1.edw.textarea.dispatchEvent(new Event('input', {}));
+			env2.edw.textarea.dispatchEvent(new Event('input', {}));
+			env3.edw.textarea.dispatchEvent(new Event('input', {}));
+			env4.edw.textarea.dispatchEvent(new Event('input', {}));
+			env5.edw.textarea.dispatchEvent(new Event('input', {}));
+			env6.edw.textarea.dispatchEvent(new Event('input', {}));
+			env7.edw.textarea.dispatchEvent(new Event('input', {}));
+			env8.edw.textarea.dispatchEvent(new Event('input', {}));
+			env9.edw.textarea.dispatchEvent(new Event('input', {}));
+		};
+
+		switchLang('en');
+		genStdCode('en');
+	</script>
+</body>
+</html>

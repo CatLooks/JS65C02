@@ -29,10 +29,10 @@ function wFetchParentheses(text, i) {
 		if (c == '(') t++;
 		if (c == ')') t--;
 		if (wIsNL(c)) {
-			throw null; 
+			throw `unmatched parenthesis due to end of line`; 
 		};
 		if (t < 0) {
-			throw null;
+			throw `unexpected closing parenthesis`;
 		};
 	} while (t);
 	return [text.slice(s, i - 1), i];
@@ -59,7 +59,7 @@ WInt.prototype.shl = function(wint) { let lim = Math.max(this.lim, wint.lim); re
 // perform an operation
 function wOperation(a, op, b) {
 	if ([typeof(a), typeof(b)].includes('string')) {
-		throw null;
+		throw `cannot perform operations with strings`;
 	};
 	switch (op) {
 		case '+':  return a.add(b);
@@ -74,7 +74,7 @@ function wOperation(a, op, b) {
 		case '<<': return a.shl(b);
 		case '>':  return new WInt(b.val >> 0x8, 0xFF);
 		case '<':  return new WInt(b.val & 0xFF, 0xFF);
-		default:   throw null;
+		default:   throw `invalid operator`;
 	};
 };
 
@@ -101,13 +101,13 @@ WNode.prototype.compute = function(scope = {}) {
 				return this.V;
 			if (Object.keys(scope).includes(this.V))
 				return scope[this.V];
-			throw null;
+			throw `label '${this.V}' was not defined`;
 		};
 	};
 
 	// perform operation on children
 	if (typeof(this.L) === 'string' || typeof(this.R) === 'string') {
-		throw null;
+		throw `cannot perform operations with strings`;
 	};
 	if (this.R === null)
 		return wOperation(this.L.compute(scope), this.V);
@@ -182,10 +182,10 @@ function wTokenize(text) {
 
 			// check integer size
 			if (digit_count == 0) {
-				throw null;
+				throw `hex literal must contain at least 1 digit`;
 			};
 			if (digit_count > 4) {
-				throw null;
+				throw `number literal must be in word range ($0000 - $FFFF)`;
 			};
 
 			// create token
@@ -211,10 +211,10 @@ function wTokenize(text) {
 
 			// check integer size
 			if (digit_count == 0) {
-				throw null;
+				throw `binary literal must contain at least 1 digit`;
 			};
 			if (digit_count > 16) {
-				throw null;
+				throw `number literal must be in word range ($0000 - $FFFF)`;
 			};
 
 			// create token
@@ -238,7 +238,7 @@ function wTokenize(text) {
 
 			// check integer size
 			if (value >= 0x10000) {
-				throw null;
+				throw `number literal must be in word range (0 - 65535)`;
 			};
 
 			// create token
@@ -255,7 +255,7 @@ function wTokenize(text) {
 			// tokenize contents of parentheses
 			let token = wTokenize(contents);
 			if (token.length == 0) {
-				throw null;
+				throw `empty parentheses`;
 			};
 			tokens.push(token);
 			continue;
@@ -282,16 +282,16 @@ function wTokenize(text) {
 				let c = text[++i];
 				if (c === '\\') i++;
 				if (c === undefined) {
-					throw null;
+					throw `unexpected end of file while parsing character quotes`;
 				};
 				if (c === '\'')
 					break;
 			};
 
 			// create token
-			let str = text.slice(start, ++i);
+			let str = eval(text.slice(start, ++i));
 			if (str.length != 1) {
-				throw null;
+				throw `character quotes must contain 1 character`;
 			};
 			tokens.push(WByte(str.charCodeAt(0)));
 			continue;
@@ -306,7 +306,7 @@ function wTokenize(text) {
 				let c = text[++i];
 				if (c === '\\') i++;
 				if (c === undefined) {
-					throw null;
+					throw `unexpected end of file while parsing string quotes`;
 				};
 				if (c === '"')
 					break;
@@ -319,7 +319,7 @@ function wTokenize(text) {
 		};
 
 		// illegal character
-		throw null;
+		throw `illegal character '${text[i]}' ($${wCast(text[i].charCodeAt(0), 16, 2)})`;
 	};
 
 	// return tokens
@@ -351,11 +351,11 @@ function wSplitExpTree(node) {
 		if (['>', '<'].includes(node.V)) {
 			node.L.V = null;
 		} else {
-			throw null;
+			throw `missing left operand of '${node.V}' operator`;
 		};
 	};
 	if (node.R.V.length === 0) {
-		throw null;
+		throw `missing right operand of '${node.V}' operator`;
 	};
 
 	// generate child nodes
@@ -375,7 +375,7 @@ function wSplitExpTree(node) {
 function wGenExpTree(tokens) {
 	// check for no tokens
 	if (tokens.length === 0)
-		throw null;
+		throw `parsed context is empty`;
 	if (tokens.length === 1) {
 		if (wIsArr(tokens[0]))
 			return wGenExpTree(tokens[0]);
@@ -415,11 +415,16 @@ function wAssemble(text, strict6502 = false) {
 	// variable definitions
 	let defs = {};
 
+	// assembly display info
+	let info = [];
+
 	// program pointer
 	let ptr = 0x8000;
 
 	// parse each line
 	for (let i = 0; i < lines.length; i++) {
+		// fetch line
+		info.push({ start: ptr, size: 0, mode: 0 });
 		linenum = i + 1;
 		let line = lines[i];
 
@@ -433,7 +438,10 @@ function wAssemble(text, strict6502 = false) {
 		let len = tks.length;
 		
 		// ignore empty lines
-		if (len === 0) continue;
+		if (len === 0) {
+			info[info.length - 1].mode = -2;
+			continue;
+		};
 
 		// check for opcode
 		let opc = tks[0].toLowerCase();
@@ -446,7 +454,7 @@ function wAssemble(text, strict6502 = false) {
 
 				// check for too many arguments
 				if (tks.lastIndexOf(',') !== comma) {
-					throw null;
+					throw `too many arguments`;
 				};
 
 				// check for implied mode
@@ -479,10 +487,10 @@ function wAssemble(text, strict6502 = false) {
 
 					// check for too many arguments inside parentheses
 					if (tks.lastIndexOf(',') !== commay) {
-						throw null;
+						throw `too many arguments inside parentheses`;
 					};
 					if (bracks.lastIndexOf(',') !== commax) {
-						throw null;
+						throw `too may arguments`;
 					};
 
 					// check for indirect under parentheses
@@ -504,12 +512,12 @@ function wAssemble(text, strict6502 = false) {
 						};
 
 						// invalid indirect mode
-						throw null;
+						throw `invalid indirect mode`;
 					};
 
 					// check for indirect + y
 					if (commax !== -1) {
-						throw null;
+						throw `parentheses must contain a single argument`;
 					};
 					if (tks.length - commay === 2 && (tks[commay + 1] === 'y' || tks[commay + 1] === 'Y')) {
 						req = wGenExpTree(bracks);
@@ -519,7 +527,7 @@ function wAssemble(text, strict6502 = false) {
 					};
 
 					// invalid indirect mode
-					throw null;
+					throw `invalid indirect mode`;
 				};
 
 				// check for single absolute mode
@@ -593,18 +601,20 @@ function wAssemble(text, strict6502 = false) {
 				};
 
 				// invalid mode
-				throw null;
+				throw `invalid addressing mode`;
 			} while (false);
 			
 			// write opcode
 			let opcID = lookup_matrix[opc][mode];
 			if (opcID === null) {
-				throw null;
+				throw `opcode '${opc}' does not support ${lookup_addr_mode_names[mode]} mode`;
 			};
 			if (strict6502 && !lookup_6502[opcID]) {
-				throw null;
+				throw `opcode '${opc}' with ${lookup_addr_mode_names[mode]} mode ($${wCast(opcID, 16, 2)}) is not available in 6502 mode`;
 			};
 			rom[(ptr++) & 0x7FFF] = opcID;
+			info[i].mode = mode;
+			info[i].size = size;
 
 			// schedule fill request
 			if (mode >= 2 && size > 0)
@@ -615,17 +625,21 @@ function wAssemble(text, strict6502 = false) {
 
 		// check for macros
 		if (opc === '.pos') {
+			info[info.length - 1].mode = -2;
+
 			// set file position
 			if (tks.includes(',') || tks.length === 1) {
-				throw null;
+				throw `macro .pos requires 1 argument`;
 			};
 			ptr = wGenExpTree(tks.slice(1)).compute(defs).val;
 			continue;
 		};
 		if (opc === '.set') {
+			info[info.length - 1].mode = -2;
+
 			// set marker
 			if (tks.length === 1) {
-				throw null;
+				throw `macro .set requires at least 2 arguments`;
 			};
 			let pos = 1;
 			let cast = null;
@@ -633,11 +647,11 @@ function wAssemble(text, strict6502 = false) {
 				cast = tks[pos].toLowerCase() == 'word' ? 1 : 0;
 				pos++;
 				if (tks.length === 2) {
-					throw null;
+					throw `static macro .set requires 3 arguments`;
 				};
 			};
 			if (typeof(tks[pos]) !== 'string' || !wIsNS(tks[pos][0])) {
-				throw null;
+				throw `macro .set requires string-name as label name`;
 			};
 			defs[tks[pos]] = wGenExpTree(tks.slice(pos + 1)).compute(defs);
 			if (cast === 0) {
@@ -650,6 +664,8 @@ function wAssemble(text, strict6502 = false) {
 			continue;
 		};
 		if (opc === '.byte') {
+			info[info.length - 1].mode = -1;
+
 			// define bytes
 			tks.push(',');
 			let prev = 1;
@@ -658,7 +674,7 @@ function wAssemble(text, strict6502 = false) {
 					// define byte
 					let out = wGenExpTree(tks.slice(prev, i)).compute(defs);
 					if (out.constructor.name !== 'WInt') {
-						throw null;
+						throw `macro .byte requires numbers as arguments`;
 					};
 					if (out.val >> 8) {
 						// cut out warning
@@ -666,11 +682,14 @@ function wAssemble(text, strict6502 = false) {
 					rom[ptr++ & 0x7FFF] = out.val;
 					ptr &= 0xFFFF;
 					prev = i + 1;
+					info[info.length - 1].size++;
 				};
 			};
 			continue;
 		};
 		if (opc === '.word') {
+			info[info.length - 1].mode = -1;
+
 			// define words
 			tks.push(',');
 			let prev = 1;
@@ -679,17 +698,20 @@ function wAssemble(text, strict6502 = false) {
 					// define word
 					let out = wGenExpTree(tks.slice(prev, i)).compute(defs);
 					if (out.constructor.name !== 'WInt') {
-						throw null;
+						throw `macro .word requires numbers as arguments`;
 					};
 					rom[ptr++ & 0x7FFF] = out.val;
 					rom[ptr++ & 0x7FFF] = out.val >> 8;
 					ptr &= 0xFFFF;
 					prev = i + 1;
+					info[info.length - 1].size += 2;
 				};
 			};
 			continue;
 		};
 		if (opc === '.ascii') {
+			info[info.length - 1].mode = -1;
+
 			// define text
 			tks.push(',');
 			let prev = 1;
@@ -698,12 +720,36 @@ function wAssemble(text, strict6502 = false) {
 					// define byte
 					let out = wGenExpTree(tks.slice(prev, i)).compute(defs);
 					if (typeof(out) !== 'string') {
-						throw null;
+						throw `macro .ascii requires strings as arguments`;
 					};
 					for (let j = 1; j < out.length; j++)
 						rom[ptr++ & 0x7FFF] = out.charCodeAt(j);
 					ptr &= 0xFFFF;
 					prev = i + 1;
+					info[info.length - 1].size += out.length;
+				};
+			};
+			continue;
+		};
+		if (opc === '.asciiz') {
+			info[info.length - 1].mode = -1;
+
+			// define text
+			tks.push(',');
+			let prev = 1;
+			for (let i = 1; i < tks.length; i++) {
+				if (tks[i] == ',') {
+					// define byte
+					let out = wGenExpTree(tks.slice(prev, i)).compute(defs);
+					if (typeof(out) !== 'string') {
+						throw `macro .asciiz requires strings as arguments`;
+					};
+					out += '\0';
+					for (let j = 1; j < out.length; j++)
+						rom[ptr++ & 0x7FFF] = out.charCodeAt(j);
+					ptr &= 0xFFFF;
+					prev = i + 1;
+					info[info.length - 1].size += out.length;
 				};
 			};
 			continue;
@@ -711,9 +757,11 @@ function wAssemble(text, strict6502 = false) {
 
 		// check for marker
 		if (tks.length === 2 && tks[1] === ':') {
+			info[info.length - 1].mode = -2;
+
 			// check marker name
 			if (!(typeof(tks[0]) === 'string' && wIsNS(tks[0]))) {
-				throw null;
+				throw `marker name must be a name`;
 			};
 
 			// define a marker
@@ -722,7 +770,7 @@ function wAssemble(text, strict6502 = false) {
 		};
 
 		// illegal keyword
-		throw null;
+		throw `invalid opcode '${tks[0]}'`;
 	};
 
 	// resolve fill requests
@@ -733,7 +781,7 @@ function wAssemble(text, strict6502 = false) {
 		// check branch distance
 		if (fill.mode === 14) {
 			if (out.val >= 0x80 && out.val < 0xFF80) {
-				throw null;
+				throw `relative branch distance (${out.val >= 0x8000 ? out.val - 0x10000 : out.val}) is too far`;
 			};
 		};
 
@@ -744,8 +792,15 @@ function wAssemble(text, strict6502 = false) {
 	});
 
 	// export assembled data
-	return { rom, defs };
+	return { rom, defs, info };
 };
+
+// addressing modes
+const lookup_addr_mode_names = [
+	'implied', 'accumulator', 'immediate', 'zeropage', 'zeropage x', 'zeropage y', 'absolute',
+	'absolute x', 'absolute y', 'indirect zeropage', 'indirect zeropage x', 'indirect zeropage y',
+	'indirect absolute', 'indirect absolute x', 'relative'
+];
 
 // instruction opcode matrix
 //        IMP   ACC   IMM   ZPG   ZPX   ZPY   ABS   ABX   ABY   IZP   IZX   IZY   IND   IAX   REL
@@ -753,6 +808,7 @@ const lookup_matrix = {
 	nop: [0xEA, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
 	brk: [0x00, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
 	wai: [0xCB, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+	stp: [0xDB, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
 	jam: [0xDB, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
 	lda: [null, null, 0xA9, 0xA5, 0xB5, null, 0xAD, 0xBD, 0xB9, null, 0xA1, 0xB1, null, null, null],
 	ldx: [null, null, 0xA2, 0xA6, null, 0xB6, 0xAE, null, 0xBE, null, null, null, null, null, null],
@@ -820,7 +876,7 @@ const lookup_matrix = {
 
 // 6502 used opcodes
 const lookup_6502 = [
-	1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 
+	1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0,
 	1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0,
 	1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0,
 	1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0,
@@ -832,7 +888,8 @@ const lookup_6502 = [
 	1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0,
 	1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0,
 	1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0,
-	1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0,
+	1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0,
+	1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0,
 	1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0,
 	1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0
 ];

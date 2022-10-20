@@ -44,13 +44,15 @@ CPU.prototype.rst = function() {
 	this.f = 0;
 };
 CPU.prototype.nmi = function() {
-	this.putWord(this.i);
-	this.putByte(this.p | FLAG_U & ~FLAG_B);
-	this.i = this.getWord(0xFFFE);
-	this.f &= ~2;
+	if (!(this.f & 1)) {
+		this.putWord(this.i);
+		this.putByte(this.p | FLAG_U & ~FLAG_B);
+		this.i = this.getWord(0xFFFE);
+		this.f &= ~2;
+	};
 };
 CPU.prototype.irq = function() {
-	if (!(this.p & FLAG_I)) {
+	if (!(this.p & FLAG_I) && !(this.f & 1)) {
 		this.putWord(this.i);
 		this.putByte(this.p | FLAG_U & ~FLAG_B);
 		this.i = this.getWord(0xFFFA);
@@ -127,7 +129,7 @@ adm_izy = function(cpu) { return cpu.getWord(cpu.nextByte()) + cpu.y & 0xFFFF; }
 adm_ind = function(cpu) { return cpu.getWord(cpu.nextWord()); };
 adm_iax = function(cpu) { return cpu.getWord(cpu.nextWord() + cpu.x & 0xFFFF); };
 adm_rel = function(cpu) { let v = cpu.nextByte(); if (v & 0x80) v -= 0x100; return cpu.i + v; };
-adm_zpr = function(cpu) { cpu.getByte(); cpu.getByte(); cpu.getByte(); };
+adm_zpr = function(cpu) { cpu.nextByte(); cpu.nextByte(); cpu.nextByte(); };
 
 // opcode functions
 opc_nop = function(cpu, arg) {};
@@ -290,5 +292,6 @@ CPU_lookup_opcs = [
 CPU.prototype.tick = function() {
 	if (this.f) return;
 	opc = this.nextByte();
+	//console.log(opc);
 	CPU_lookup_opcs[opc](this, CPU_lookup_modes[opc](this));
 };
