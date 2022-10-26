@@ -25,6 +25,14 @@ for (let i = 0; i < 256; i++) {
 	};
 };
 
+// generate color from byte
+function wGenColor(byte) {
+	let r = (byte >> 4 & 3) * 5;
+	let g = (byte >> 2 & 3) * 5;
+	let b = (byte & 3) * 5;
+	return '#' + r.toString(16) + g.toString(16) + b.toString(16);
+};
+
 // convert to base function
 function wCast(num, base, pad) {
 	let res = num.toString(base);
@@ -619,7 +627,7 @@ function WController(cpu) {
 	b5.textContent = 'Run';
 	b5.onclick = () => {
 		this.timer = setInterval(() => {
-			for (let i = 0; i < 100; i++) {
+			for (let i = 0; i < 200; i++) {
 				if (this.cpu.f) {
 					if (this.cpu.f & 1) {
 						clearInterval(this.timer);
@@ -743,6 +751,11 @@ function WTerminal(cpu, mem, ctrl) {
 	this.btn.setAttribute('class', 'fmt-btn');
 	this.btn.setAttribute('style', 'width: 100%');
 	this.btn.textContent = 'Clear';
+	this.cvs = document.createElement('canvas');
+	this.cvs.setAttribute('class', 'fmt-cvs');
+	this.cvs.setAttribute('height', '200');
+	this.ctx = this.cvs.getContext('2d');
+	this.ctx.fillRect(0, 0, 300, 200);
 	let div = this.div;
 	this.btn.onclick = () => {
 		div.innerHTML = '';
@@ -786,6 +799,11 @@ function WTools() {
 	g6.appendChild(g7);
 	let g8 = document.createElement('td');
 	let g9 = document.createElement('table');
+	let gg = document.createElement('tr');
+	let gh = document.createElement('td');
+	gh.appendChild(this.trm.cvs);
+	gg.appendChild(gh);
+	g9.appendChild(gg);
 	let ga = document.createElement('tr');
 	let gb = document.createElement('td');
 	gb.appendChild(this.trm.div);
@@ -818,6 +836,14 @@ function WTools() {
 			terminal.div.innerHTML = '';
 		else if (addr == 0x4003)
 			terminal.dest = data << 8;
+		else if (addr >= 0x6000 && addr < 0x6258) {
+			let shift = addr & 0xFFF;
+			terminal.ctx.fillStyle = wGenColor(data);
+			terminal.ctx.fillRect((shift % 30) * 10, Math.floor(shift / 30) * 10, 10, 10);
+		} else if (addr == 0x4004) {
+			terminal.ctx.fillStyle = wGenColor(data);
+			terminal.ctx.fillRect(0, 0, 300, 200);
+		};
 	};
 	this.cpu.get = function(addr) {
 		if (addr < 0x4000)

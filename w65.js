@@ -29,7 +29,7 @@ function CPU() {
 	this.x = random();
 	this.y = random();
 	this.s = random();
-	this.p = random();
+	this.p = random() | FLAG_U | FLAG_B;
 	this.i = random() | random() << 8;
 	this.f = 1;
 };
@@ -252,7 +252,7 @@ opc_ror = function(cpu, arg) {
 
 // lookup tables
 CPU_lookup_modes = [
-	adm_imm, adm_izx, adm_imm, adm_imp, adm_zpg, adm_zpg, adm_zpg, adm_zpg, adm_imp, adm_imm, adm_imp, adm_imp, adm_abs, adm_abs, adm_abs, adm_zpr,
+	adm_imp, adm_izx, adm_imm, adm_imp, adm_zpg, adm_zpg, adm_zpg, adm_zpg, adm_imp, adm_imm, adm_imp, adm_imp, adm_abs, adm_abs, adm_abs, adm_zpr,
 	adm_rel, adm_izy, adm_izp, adm_imp, adm_zpg, adm_zpx, adm_zpx, adm_zpg, adm_imp, adm_aby, adm_imp, adm_imp, adm_abs, adm_abx, adm_abx, adm_zpr,
 	adm_abs, adm_izx, adm_imm, adm_imp, adm_zpg, adm_zpg, adm_zpg, adm_zpg, adm_imp, adm_imm, adm_imp, adm_imp, adm_abs, adm_abs, adm_abs, adm_zpr,
 	adm_rel, adm_izy, adm_izp, adm_imp, adm_zpx, adm_zpx, adm_zpx, adm_zpg, adm_imp, adm_aby, adm_imp, adm_imp, adm_abx, adm_abx, adm_abx, adm_zpr,

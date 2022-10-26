@@ -99,6 +99,12 @@ body {
 	width: 100px;
 }
 
+.fmt-cvs {
+	border: 5px solid #999;
+	border-radius: 10px;
+	width: calc(100% - 10px);
+}
+
 .fmt-out {
 	font-family: monospace;
 	font-size: 18px;
@@ -106,7 +112,7 @@ body {
 	border-radius: 10px;
 	background-color: #111;
 	width: 300px;
-	height: 714px;
+	height: 452px;
 	padding: 10px;
 	resize: none;
 	color: #FFF;

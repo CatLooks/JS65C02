@@ -186,6 +186,7 @@
 
 		// turn on language
 		function switchLang(lang) {
+			wLang = lang === 'uk';
 			let els = document.getElementsByTagName(`lang-${lang}`);
 			for (let i = 0; i < els.length; i++) {
 				els[i].style = '';

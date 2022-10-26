@@ -6,9 +6,6 @@
 ///                       ///
 /////////////////////////////
 
-// language parameter
-let wLang = 0;
-
 // character matches
 function wIsWS(c) { return ' \b\t\n\v\f\r'.includes(c); };
 function wIsNL(c) { return '\r\n\f'.includes(c) || c === undefined; };
@@ -32,10 +29,10 @@ function wFetchParentheses(text, i) {
 		if (c == '(') t++;
 		if (c == ')') t--;
 		if (wIsNL(c)) {
-			throw wLang ? `незакрита дужка до нової лінії` : `unmatched parenthesis due to end of line`; 
+			throw `unmatched parenthesis due to end of line`; 
 		};
 		if (t < 0) {
-			throw wLang ? `неочікувана закриваюча дужка` : `unexpected closing parenthesis`;
+			throw `unexpected closing parenthesis`;
 		};
 	} while (t);
 	return [text.slice(s, i - 1), i];
@@ -62,7 +59,7 @@ WInt.prototype.shl = function(wint) { let lim = Math.max(this.lim, wint.lim); re
 // perform an operation
 function wOperation(a, op, b) {
 	if ([typeof(a), typeof(b)].includes('string')) {
-		throw wLang ? `операції над строками неможливі` : `cannot perform operations with strings`;
+		throw `cannot perform operations with strings`;
 	};
 	switch (op) {
 		case '+':  return a.add(b);
@@ -77,7 +74,7 @@ function wOperation(a, op, b) {
 		case '<<': return a.shl(b);
 		case '>':  return new WInt(b.val >> 0x8, 0xFF);
 		case '<':  return new WInt(b.val & 0xFF, 0xFF);
-		default:   throw wLang ? `неправильний оператор` : `invalid operator`;
+		default:   throw `invalid operator`;
 	};
 };
 
@@ -104,13 +101,13 @@ WNode.prototype.compute = function(scope = {}) {
 				return this.V;
 			if (Object.keys(scope).includes(this.V))
 				return scope[this.V];
-			throw wLang ? `маркер '${this.V}' не є визначеним` : `label '${this.V}' was not defined`;
+			throw `label '${this.V}' was not defined`;
 		};
 	};
 
 	// perform operation on children
 	if (typeof(this.L) === 'string' || typeof(this.R) === 'string') {
-		throw wLang ? `операції над строками неможливі` : `cannot perform operations with strings`;
+		throw `cannot perform operations with strings`;
 	};
 	if (this.R === null)
 		return wOperation(this.L.compute(scope), this.V);
@@ -185,10 +182,10 @@ function wTokenize(text) {
 
 			// check integer size
 			if (digit_count == 0) {
-				throw wLang ? `число має містити як мінімум 1 цифру` : `hex literal must contain at least 1 digit`;
+				throw `hex literal must contain at least 1 digit`;
 			};
 			if (digit_count > 4) {
-				throw wLang ? `число має бути у границі $0000 - $FFFF` : `number literal must be in word range ($0000 - $FFFF)`;
+				throw `number literal must be in word range ($0000 - $FFFF)`;
 			};
 
 			// create token
@@ -214,10 +211,10 @@ function wTokenize(text) {
 
 			// check integer size
 			if (digit_count == 0) {
-				throw wLang ? `число має містити як мінімум 1 цифру` : `binary literal must contain at least 1 digit`;
+				throw `binary literal must contain at least 1 digit`;
 			};
 			if (digit_count > 16) {
-				throw wLang ? `число має бути у границі $0000 - $FFFF` : `number literal must be in word range ($0000 - $FFFF)`;
+				throw `number literal must be in word range ($0000 - $FFFF)`;
 			};
 
 			// create token
@@ -241,7 +238,7 @@ function wTokenize(text) {
 
 			// check integer size
 			if (value >= 0x10000) {
-				throw wLang ? `число має бути у границі 0 - 65535` : `number literal must be in word range (0 - 65535)`;
+				throw `number literal must be in word range (0 - 65535)`;
 			};
 
 			// create token
@@ -258,7 +255,7 @@ function wTokenize(text) {
 			// tokenize contents of parentheses
 			let token = wTokenize(contents);
 			if (token.length == 0) {
-				throw wLang ? `пусті дужки` : `empty parentheses`;
+				throw `empty parentheses`;
 			};
 			tokens.push(token);
 			continue;
@@ -285,7 +282,7 @@ function wTokenize(text) {
 				let c = text[++i];
 				if (c === '\\') i++;
 				if (c === undefined) {
-					throw wLang ? `нова лінія посередині лапок` : `unexpected end of file while parsing character quotes`;
+					throw `unexpected end of file while parsing character quotes`;
 				};
 				if (c === '\'')
 					break;
@@ -294,7 +291,7 @@ function wTokenize(text) {
 			// create token
 			let str = eval(text.slice(start, ++i));
 			if (str.length != 1) {
-				throw wLang ? `одинарні дужки мають містити 1 символ` : `character quotes must contain 1 character`;
+				throw `character quotes must contain 1 character`;
 			};
 			tokens.push(WByte(str.charCodeAt(0)));
 			continue;
@@ -309,7 +306,7 @@ function wTokenize(text) {
 				let c = text[++i];
 				if (c === '\\') i++;
 				if (c === undefined) {
-					throw wLang ? `нова лінія посередині лапок` : `unexpected end of file while parsing string quotes`;
+					throw `unexpected end of file while parsing string quotes`;
 				};
 				if (c === '"')
 					break;
@@ -322,7 +319,7 @@ function wTokenize(text) {
 		};
 
 		// illegal character
-		throw wLang ? `нелегальний символ '${text[i]}' ($${wCast(text[i].charCodeAt(0), 16, 2)})` : `illegal character '${text[i]}' ($${wCast(text[i].charCodeAt(0), 16, 2)})`;
+		throw `illegal character '${text[i]}' ($${wCast(text[i].charCodeAt(0), 16, 2)})`;
 	};
 
 	// return tokens
@@ -354,11 +351,11 @@ function wSplitExpTree(node) {
 		if (['>', '<'].includes(node.V)) {
 			node.L.V = null;
 		} else {
-			throw wLang ? `відсутній лівий вираз оператора '${node.V}'` : `missing left operand of '${node.V}' operator`;
+			throw `missing left operand of '${node.V}' operator`;
 		};
 	};
 	if (node.R.V.length === 0) {
-		throw wLang ? `відсутній правий вираз оператора '${node.V}'` : `missing right operand of '${node.V}' operator`;
+		throw `missing right operand of '${node.V}' operator`;
 	};
 
 	// generate child nodes
@@ -378,7 +375,7 @@ function wSplitExpTree(node) {
 function wGenExpTree(tokens) {
 	// check for no tokens
 	if (tokens.length === 0)
-		throw wLang ? `порожній вираз` : `parsed context is empty`;
+		throw `parsed context is empty`;
 	if (tokens.length === 1) {
 		if (wIsArr(tokens[0]))
 			return wGenExpTree(tokens[0]);
@@ -457,7 +454,7 @@ function wAssemble(text, strict6502 = false) {
 
 				// check for too many arguments
 				if (tks.lastIndexOf(',') !== comma) {
-					throw wLang ? `забагато аргументів` : `too many arguments`;
+					throw `too many arguments`;
 				};
 
 				// check for implied mode
@@ -490,10 +487,10 @@ function wAssemble(text, strict6502 = false) {
 
 					// check for too many arguments inside parentheses
 					if (tks.lastIndexOf(',') !== commay) {
-						throw wLang ? `забагато аргументів у дужках` : `too many arguments inside parentheses`;
+						throw `too many arguments inside parentheses`;
 					};
 					if (bracks.lastIndexOf(',') !== commax) {
-						throw wLang ? `забагато аргументів` : `too may arguments`;
+						throw `too may arguments`;
 					};
 
 					// check for indirect under parentheses
@@ -515,12 +512,12 @@ function wAssemble(text, strict6502 = false) {
 						};
 
 						// invalid indirect mode
-						throw wLang ? `неправильний вказівниковий режим` : `invalid indirect mode`;
+						throw `invalid indirect mode`;
 					};
 
 					// check for indirect + y
 					if (commax !== -1) {
-						throw wLang ? `дужки мають містити 1 аргумент` : `parentheses must contain a single argument`;
+						throw `parentheses must contain a single argument`;
 					};
 					if (tks.length - commay === 2 && (tks[commay + 1] === 'y' || tks[commay + 1] === 'Y')) {
 						req = wGenExpTree(bracks);
@@ -530,7 +527,7 @@ function wAssemble(text, strict6502 = false) {
 					};
 
 					// invalid indirect mode
-					throw wLang ? `неправильний вказівниковий режим` : `invalid indirect mode`;
+					throw `invalid indirect mode`;
 				};
 
 				// check for single absolute mode
@@ -604,16 +601,16 @@ function wAssemble(text, strict6502 = false) {
 				};
 
 				// invalid mode
-				throw wLang ? `неправильний режим адресації` : `invalid addressing mode`;
+				throw `invalid addressing mode`;
 			} while (false);
 			
 			// write opcode
 			let opcID = lookup_matrix[opc][mode];
 			if (opcID === null) {
-				throw wLang ? `опкод '${opc}' не підтримує "${lookup_addr_mode_names[mode]}" режим` : `opcode '${opc}' does not support ${lookup_addr_mode_names[mode]} mode`;
+				throw `opcode '${opc}' does not support ${lookup_addr_mode_names[mode]} mode`;
 			};
 			if (strict6502 && !lookup_6502[opcID]) {
-				throw wLang ? `опкод '${opc}' не підтримує "${lookup_addr_mode_names[mode]}" режим в строгому 6502` : `opcode '${opc}' with ${lookup_addr_mode_names[mode]} mode ($${wCast(opcID, 16, 2)}) is not available in 6502 mode`;
+				throw `opcode '${opc}' with ${lookup_addr_mode_names[mode]} mode ($${wCast(opcID, 16, 2)}) is not available in 6502 mode`;
 			};
 			rom[(ptr++) & 0x7FFF] = opcID;
 			info[i].mode = mode;
@@ -632,7 +629,7 @@ function wAssemble(text, strict6502 = false) {
 
 			// set file position
 			if (tks.includes(',') || tks.length === 1) {
-				throw wLang ? `макрос .pos потребує 1 аргумент` : `macro .pos requires 1 argument`;
+				throw `macro .pos requires 1 argument`;
 			};
 			ptr = wGenExpTree(tks.slice(1)).compute(defs).val;
 			continue;
@@ -642,7 +639,7 @@ function wAssemble(text, strict6502 = false) {
 
 			// set marker
 			if (tks.length === 1) {
-				throw wLang ? `макрос .set потребуєя як мінімум 2 аргументи` : `macro .set requires at least 2 arguments`;
+				throw `macro .set requires at least 2 arguments`;
 			};
 			let pos = 1;
 			let cast = null;
@@ -650,11 +647,11 @@ function wAssemble(text, strict6502 = false) {
 				cast = tks[pos].toLowerCase() == 'word' ? 1 : 0;
 				pos++;
 				if (tks.length === 2) {
-					throw wLang ? `визначений макрос .set потребує 3 аргументи` : `static macro .set requires 3 arguments`;
+					throw `static macro .set requires 3 arguments`;
 				};
 			};
 			if (typeof(tks[pos]) !== 'string' || !wIsNS(tks[pos][0])) {
-				throw wLang ? `макрос .set потребує назву-маркер як аргумент` : `macro .set requires string-name as label name`;
+				throw `macro .set requires string-name as label name`;
 			};
 			defs[tks[pos]] = wGenExpTree(tks.slice(pos + 1)).compute(defs);
 			if (cast === 0) {
@@ -677,7 +674,7 @@ function wAssemble(text, strict6502 = false) {
 					// define byte
 					let out = wGenExpTree(tks.slice(prev, i)).compute(defs);
 					if (out.constructor.name !== 'WInt') {
-						throw wLang ? `макрос .byte потребує чисельних аргументів` : `macro .byte requires numbers as arguments`;
+						throw `macro .byte requires numbers as arguments`;
 					};
 					if (out.val >> 8) {
 						// cut out warning
@@ -701,7 +698,7 @@ function wAssemble(text, strict6502 = false) {
 					// define word
 					let out = wGenExpTree(tks.slice(prev, i)).compute(defs);
 					if (out.constructor.name !== 'WInt') {
-						throw wLang ? `макрос .word потребує чисельних аргументів` : `macro .word requires numbers as arguments`;
+						throw `macro .word requires numbers as arguments`;
 					};
 					rom[ptr++ & 0x7FFF] = out.val;
 					rom[ptr++ & 0x7FFF] = out.val >> 8;
@@ -723,7 +720,7 @@ function wAssemble(text, strict6502 = false) {
 					// define byte
 					let out = wGenExpTree(tks.slice(prev, i)).compute(defs);
 					if (typeof(out) !== 'string') {
-						throw wLang ? `макрос .ascii потребує строкових аргументів` : `macro .ascii requires strings as arguments`;
+						throw `macro .ascii requires strings as arguments`;
 					};
 					for (let j = 1; j < out.length; j++)
 						rom[ptr++ & 0x7FFF] = out.charCodeAt(j);
@@ -745,7 +742,7 @@ function wAssemble(text, strict6502 = false) {
 					// define byte
 					let out = wGenExpTree(tks.slice(prev, i)).compute(defs);
 					if (typeof(out) !== 'string') {
-						throw wLang ? `макрос .asciiz потребує строкових аргументів` : `macro .asciiz requires strings as arguments`;
+						throw `macro .asciiz requires strings as arguments`;
 					};
 					out += '\0';
 					for (let j = 1; j < out.length; j++)
@@ -764,7 +761,7 @@ function wAssemble(text, strict6502 = false) {
 
 			// check marker name
 			if (!(typeof(tks[0]) === 'string' && wIsNS(tks[0]))) {
-				throw wLang ? `назва маркеру має бути строковою` : `marker name must be a name`;
+				throw `marker name must be a name`;
 			};
 
 			// define a marker
@@ -773,7 +770,7 @@ function wAssemble(text, strict6502 = false) {
 		};
 
 		// illegal keyword
-		throw wLang ? `неправильна інструкція '${tks[0]}'` : `invalid opcode '${tks[0]}'`;
+		throw `invalid opcode '${tks[0]}'`;
 	};
 
 	// resolve fill requests
@@ -784,7 +781,7 @@ function wAssemble(text, strict6502 = false) {
 		// check branch distance
 		if (fill.mode === 14) {
 			if (out.val >= 0x80 && out.val < 0xFF80) {
-				throw wLang ? `відстань відносного розгалуження (${out.val >= 0x8000 ? out.val - 0x10000 : out.val}) надто велика` : `relative branch distance (${out.val >= 0x8000 ? out.val - 0x10000 : out.val}) is too far`;
+				throw `relative branch distance (${out.val >= 0x8000 ? out.val - 0x10000 : out.val}) is too far`;
 			};
 		};
 
