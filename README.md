@@ -14,7 +14,7 @@ Before creating a CPU you need to write set & get functions:
 CPU.prototype.set = function(addr, data) { /* ... */ };
 CPU.prototype.get = function(addr)       { return 0; };
 ```
-A single 65C02 "Core" can be create as such:
+A single 65C02 "Core" can be created as such:
 ```js
 let cpu = new CPU();
 ```
@@ -27,7 +27,7 @@ This CPU also provides `halt` & `wait` flags (triggered by `jam` & `wai` instruc
 let halt = cpu.f & 1;
 let wait = cpu.f >> 1;
 ```
-Usually, a CPU should only run if the `f` attribute is set to `0`:
+A CPU will only run if the `f` attribute is set to `0`:
 ```js
 if (!cpu.f)
   cpu.tick();
