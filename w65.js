@@ -157,8 +157,8 @@ opc_eor = function(cpu, arg) { cpu.nz(cpu.a ^= cpu.getByte(arg)); };
 opc_adc = function(cpu, arg) { cpu.add(cpu.getByte(arg)); cpu.nz(cpu.a); };
 opc_sbc = function(cpu, arg) { cpu.sub(cpu.getByte(arg)); cpu.nz(cpu.a); };
 
-opc_inc = function(cpu, arg) { let v = cpu.getByte(arg) + 1 & 0xFF; cpu.setByte(v); cpu.nz(v); };
-opc_dec = function(cpu, arg) { let v = cpu.getByte(arg) - 1 & 0xFF; cpu.setByte(v); cpu.nz(v); };
+opc_inc = function(cpu, arg) { let v = cpu.getByte(arg) + 1 & 0xFF; cpu.setByte(arg, v); cpu.nz(v); };
+opc_dec = function(cpu, arg) { let v = cpu.getByte(arg) - 1 & 0xFF; cpu.setByte(arg, v); cpu.nz(v); };
 opc_ina = function(cpu, arg) { cpu.a++; cpu.nz(cpu.a &= 0xFF); };
 opc_dea = function(cpu, arg) { cpu.a--; cpu.nz(cpu.a &= 0xFF); };
 opc_inx = function(cpu, arg) { cpu.x++; cpu.nz(cpu.x &= 0xFF); };

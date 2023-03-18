@@ -603,6 +603,7 @@ function WController(cpu) {
 		this.mem.display();
 		this.update();
 		this.term.inp.disabled = true;
+		this.cpu.setByte(0x4004, 0);
 	};
 	dd.appendChild(b3);
 	r7.appendChild(dd);
@@ -627,7 +628,7 @@ function WController(cpu) {
 	b5.textContent = 'Run';
 	b5.onclick = () => {
 		this.timer = setInterval(() => {
-			for (let i = 0; i < 200; i++) {
+			for (let i = 0; i < 100; i++) {
 				if (this.cpu.f) {
 					if (this.cpu.f & 1) {
 						clearInterval(this.timer);
@@ -655,6 +656,8 @@ function WController(cpu) {
 	b6.textContent = 'Pause';
 	b6.onclick = () => {
 		clearInterval(this.timer);
+		this.mem.display();
+		this.update();
 		b6.setAttribute('style', 'background-color: #666;');
 		b5.setAttribute('style', '');
 	};
@@ -713,7 +716,7 @@ WController.prototype.update = function() {
 function WTerminal(cpu, mem, ctrl) {
 	this.div = document.createElement('pre');
 	this.div.setAttribute('class', 'fmt-out');
-	this.div.innerHTML = '<span style="color: #CCC">Registers:\n\nW $4000 - Output character\nW $4001 - Enable input\nW $4002 - Clear terminal\nW $4003 - Set input buffer position high byte\n\n</style>';
+	this.div.innerHTML = '<span style="color: #CCC">W $4000 - Output character\nW $4001 - Enable input\nW $4002 - Clear terminal\nW $4003 - Set input buffer position high byte\nW $4004 - Clear canvas\nW $4005 - Enable canvas NMIs\n\nR $4006 - Mouse X\nR $4007 - Mouse Y\nR $4008 - Mouse Position Low\nR $4009 - Mouse Position High\n\nRW $0000 ~ $3FFF - Work RAM\nRW $6000 ~ $6257 - Canvas RAM\nR  $8000 - $FFFF - Program ROM\n\nIRQ - Terminal Input\nNMI - Canvas Input</style>';
 	this.int = document.createElement('table');
 	let row = document.createElement('tr');
 	let fld = document.createElement('td');
@@ -752,8 +755,37 @@ function WTerminal(cpu, mem, ctrl) {
 	this.btn.setAttribute('style', 'width: 100%');
 	this.btn.textContent = 'Clear';
 	this.cvs = document.createElement('canvas');
-	this.cvs.setAttribute('class', 'fmt-cvs');
+	this.cvs.setAttribute('class', 'fmt-cvs unselectable');
 	this.cvs.setAttribute('height', '200');
+	this.state = false;
+	this.trig = true;
+	this.cvs.onmousedown = (evt) => {
+		this.state = true;
+		if (!(evt.offsetX >= 0 && evt.offsetX < 330 && evt.offsetY >= 0 && evt.offsetY < 220))
+			return;
+		this.epos = Math.floor(evt.offsetX / 11) + Math.floor(evt.offsetY / 11) * 30;
+		if (this.trig) {
+			this.trig = false;
+			cpu.nmi();
+			ctrl.update();
+			mem.display();
+		};
+	};
+	this.cvs.onmouseup = (evt) => {
+		this.state = false;
+	};
+	this.cvs.onmouseleave = this.cvs.onmouseup;
+	this.cvs.onmousemove = (evt) => {
+		if (!(this.state && evt.offsetX >= 0 && evt.offsetX < 330 && evt.offsetY >= 0 && evt.offsetY < 220))
+			return;
+		this.epos = Math.floor(evt.offsetX / 11) + Math.floor(evt.offsetY / 11) * 30;
+		if (this.trig) {
+			this.trig = false;
+			cpu.nmi();
+			ctrl.update();
+			mem.display();
+		};
+	};
 	this.ctx = this.cvs.getContext('2d');
 	this.ctx.fillRect(0, 0, 300, 200);
 	let div = this.div;
@@ -761,6 +793,8 @@ function WTerminal(cpu, mem, ctrl) {
 		div.innerHTML = '';
 	};
 	this.dest = 0x0200;
+	this.epos = 0x0000;
+	this.cram = new Uint8Array(600);
 };
 
 // editor tools
@@ -838,11 +872,16 @@ function WTools() {
 			terminal.dest = data << 8;
 		else if (addr >= 0x6000 && addr < 0x6258) {
 			let shift = addr & 0xFFF;
+			terminal.cram[shift] = data & 0x3F;
 			terminal.ctx.fillStyle = wGenColor(data);
 			terminal.ctx.fillRect((shift % 30) * 10, Math.floor(shift / 30) * 10, 10, 10);
 		} else if (addr == 0x4004) {
 			terminal.ctx.fillStyle = wGenColor(data);
 			terminal.ctx.fillRect(0, 0, 300, 200);
+			for (let i = 0; i < 600; i++)
+				terminal.cram[i] = 0;
+		} else if (addr == 0x4005) {
+			terminal.trig = true;
 		};
 	};
 	this.cpu.get = function(addr) {
@@ -850,6 +889,16 @@ function WTools() {
 			return ram[addr];
 		if (addr >= 0x8000)
 			return rom[addr & 0x7FFF];
+		if (addr == 0x4006)
+			return terminal.epos % 30;
+		if (addr == 0x4007)
+			return Math.floor(terminal.epos / 30);
+		if (addr == 0x4008)
+			return terminal.epos & 0xFF;
+		if (addr == 0x4009)
+			return terminal.epos >> 8;
+		if (addr >= 0x6000 && addr < 0x6258)
+			return terminal.cram[addr & 0xFFF];
 		return 0x0;
 	};
 	this.mem.display();
